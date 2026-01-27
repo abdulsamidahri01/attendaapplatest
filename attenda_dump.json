@@ -1,0 +1,32 @@
+{
+  "config": {
+    "schoolName": "Attenda",
+    "departmentName": "DEPARTMENT OF ZOOLOGY",
+    "timings": {
+      "days": "Mon - Fri",
+      "hours": "08:00 AM - 02:00 PM"
+    },
+    "events": [
+      { "title": "Parent Teacher Meeting", "date": "12 Aug", "time": "10:00 AM", "type": "Meeting" },
+      { "title": "Annual Sports Day", "date": "15 Aug", "time": "09:00 AM", "type": "Event" },
+      { "title": "Science Exhibition", "date": "20 Sep", "time": "09:00 AM", "type": "Academic" },
+      { "title": "Faculty Training Workshop", "date": "05 Oct", "time": "11:00 AM", "type": "Meeting" }
+    ],
+    "vision": "To lead in biological excellence and institutional intelligence.",
+    "mission": "Empowering the next generation of zoologists through data-driven academic management."
+  },
+  "classes": [
+    { "id": "1", "name": "BS-I ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Zoology", "Chemistry", "English"], "subjectTeachers": {} },
+    { "id": "2", "name": "BS-II ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Zoology", "Botany", "English"], "subjectTeachers": {} },
+    { "id": "3", "name": "BS-III ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Genetics", "Ecology", "Biostatistics"], "subjectTeachers": {} },
+    { "id": "4", "name": "BS-IV ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Zoology", "Wildlife"], "subjectTeachers": {} },
+    { "id": "5", "name": "MSc-I ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Genetics", "Biostatistics"], "subjectTeachers": {} },
+    { "id": "6", "name": "MSc-II ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Ecology", "Wildlife"], "subjectTeachers": {} },
+    { "id": "7", "name": "MPhil ZOO", "studentCount": 0, "boys": 0, "girls": 0, "na": 0, "subjects": ["Biostatistics"], "subjectTeachers": {} }
+  ],
+  "employees": [],
+  "students": [],
+  "notices": [
+    { "id": "1", "title": "System Initialized. Welcome to Attenda.", "type": "General", "date": "26 Jan 2025" }
+  ]
+}
