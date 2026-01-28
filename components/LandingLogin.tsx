@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, ArrowRight, AlertCircle, Lock, RefreshCw, KeyRound, GraduationCap } from 'lucide-react';
+import { User, ArrowRight, AlertCircle, Lock, RefreshCw, KeyRound, GraduationCap, Shield, Briefcase, UserSquare } from 'lucide-react';
 import { UserRole, UserSession } from '../types';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -17,6 +17,7 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'admin' | 'employee' | 'student'>('admin');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,25 +28,25 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
     const inputPass = password.trim();
 
     // 1. Check for Legacy Master Admin Bypass
-    const rootUser = adminCreds?.username || 'admin';
-    const rootPass = adminCreds?.password || 'admin123';
+    if (activeTab === 'admin') {
+      const rootUser = adminCreds?.username || 'admin';
+      const rootPass = adminCreds?.password || 'admin123';
 
-    if (inputId === rootUser && inputPass === rootPass) {
-      onLoginSuccess({ 
-        isAuthenticated: true, 
-        role: 'admin', 
-        username: 'Administrator' 
-      });
-      setLoading(false);
-      return;
+      if (inputId === rootUser && inputPass === rootPass) {
+        onLoginSuccess({
+          isAuthenticated: true,
+          role: 'admin',
+          username: 'Administrator'
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     // 2. Otherwise, attempt Firebase Authentication (requires email format)
     try {
-      // If the user didn't provide an email but tried to login via Firebase, 
-      // we assume it's an email or we show an error.
       if (!inputId.includes('@')) {
-        setError('Please enter a valid email address or the admin username.');
+        setError('Please enter a valid email address.');
         setLoading(false);
         return;
       }
@@ -58,19 +59,32 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        onLoginSuccess({ 
-          isAuthenticated: true, 
-          role: userData.role as UserRole, 
+        const userRole = userData.role as UserRole;
+
+        // Check if the user's role matches the active tab
+        if (userRole !== activeTab) {
+          setError(`You are not registered as a ${activeTab}.`);
+          setLoading(false);
+          return;
+        }
+
+        onLoginSuccess({
+          isAuthenticated: true,
+          role: userRole,
           username: user.email?.split('@')[0] || 'User',
           studentId: userData.studentId
         });
       } else {
-        // Fallback for newly created Firebase users
-        onLoginSuccess({ 
-          isAuthenticated: true, 
-          role: 'admin', 
-          username: user.email?.split('@')[0] || 'User' 
-        });
+        // Fallback for newly created Firebase users (if they are admin)
+        if(activeTab === 'admin') {
+            onLoginSuccess({
+                isAuthenticated: true,
+                role: 'admin',
+                username: user.email?.split('@')[0] || 'User'
+            });
+        } else {
+            setError(`You are not registered as a ${activeTab}.`);
+        }
       }
     } catch (err: any) {
       console.error("Login Error:", err);
@@ -79,6 +93,18 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
       setLoading(false);
     }
   };
+
+  const renderTab = (role: 'admin' | 'employee' | 'student', icon: React.ReactNode, label: string) => (
+    <button
+      onClick={() => setActiveTab(role)}
+      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl w-full transition-all duration-300 ${
+        activeTab === role ? 'bg-[#2546b5] text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+      }`}
+    >
+      {icon}
+      <span className="text-xs font-bold">{label}</span>
+    </button>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f0f7ff] relative overflow-hidden font-sans">
@@ -98,16 +124,22 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
              </div>
              <div className="bg-[#2546b5]/10 backdrop-blur-md border border-[#2546b5]/20 px-8 py-2 rounded-full">
                 <p className="text-[#2546b5] text-[10px] font-black tracking-[0.3em] uppercase">
-                  Institutional Intelligence
+                  Smart Learning Ecosystem
                 </p>
              </div>
           </div>
 
-          <div className="bg-white p-12 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(37,70,181,0.15)] border border-white">
-            <div className="text-center mb-10">
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4">Secure Sign In</p>
-              <h3 className="text-xl font-black text-slate-800 tracking-tight">Portal Access</h3>
+          <div className="bg-white p-8 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(37,70,181,0.15)] border border-white">
+            <div className="text-center mb-8">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-2">Portal Access</p>
             </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-8">
+                {renderTab('admin', <Shield size={20}/>, 'Admin')}
+                {renderTab('employee', <Briefcase size={20}/>, 'Employee')}
+                {renderTab('student', <UserSquare size={20}/>, 'Student')}
+            </div>
+
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="relative">
@@ -118,8 +150,8 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-5 bg-[#f8fafc] border-transparent rounded-[1.5rem] focus:bg-white focus:ring-2 focus:ring-[#2546b5] focus:border-transparent transition-all text-sm placeholder:text-slate-400 text-slate-700 shadow-inner font-bold"
-                  placeholder="Username or Email"
+                  className="block w-full pl-14 pr-6 py-4 bg-[#f8fafc] border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#2546b5] focus:border-transparent transition-all text-sm placeholder:text-slate-400 text-slate-700 shadow-inner font-bold"
+                  placeholder={activeTab === 'admin' ? 'admin' : activeTab === 'employee' ? 'Employee Email' : 'Student Email'}
                   required
                 />
               </div>
@@ -131,44 +163,47 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-5 bg-[#f8fafc] border-transparent rounded-[1.5rem] focus:bg-white focus:ring-2 focus:ring-[#2546b5] focus:border-transparent transition-all text-sm placeholder:text-slate-400 text-slate-700 shadow-inner font-bold"
+                  className="block w-full pl-14 pr-6 py-4 bg-[#f8fafc] border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#2546b5] focus:border-transparent transition-all text-sm placeholder:text-slate-400 text-slate-700 shadow-inner font-bold"
                   placeholder="••••••••"
                   required
                 />
               </div>
 
               {error && (
-                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-3 border border-rose-100">
-                  <AlertCircle size={16} />
+                <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 border border-rose-100">
+                  <AlertCircle size={14} />
                   {error}
                 </div>
               )}
 
-              <div className="pt-4">
+              <div className="pt-2">
                   <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-5 bg-[#2546b5] hover:bg-blue-800 text-white rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-3 text-sm shadow-xl active:scale-[0.98] disabled:opacity-70"
+                      className="w-full py-4 bg-[#2546b5] hover:bg-blue-800 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-sm shadow-xl active:scale-[0.98] disabled:opacity-70"
                   >
                       {loading ? <RefreshCw className="animate-spin" size={20} /> : (
                       <>
-                          Login to System <ArrowRight size={20} strokeWidth={3} />
+                          Sign In <ArrowRight size={20} strokeWidth={3} />
                       </>
                       )}
                   </button>
               </div>
 
-              <div className="text-center mt-6">
-                <button 
+              <div className="text-center mt-4">
+                <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="text-[10px] font-black text-slate-400 hover:text-[#2546b5] transition-colors uppercase tracking-[0.3em]"
+                  className="text-[10px] font-black text-slate-400 hover:text-[#2546b5] transition-colors uppercase tracking-[0.2em]"
                 >
-                  Need access? Contact Admin
+                  Forgot Password?
                 </button>
               </div>
             </form>
           </div>
+        </div>
+         <div className="w-full max-w-sm mt-8 text-center">
+            <p className="text-xs text-slate-400">© 2024 Educational Intelligence Portal. All Rights Reserved.</p>
         </div>
       </div>
 
@@ -181,7 +216,7 @@ const LandingLogin: React.FC<LandingLoginProps> = ({ onLoginSuccess, adminCreds 
               </div>
               <h3 className="text-xl font-black text-slate-800 mb-4">Request Access</h3>
               <p className="text-sm text-slate-500 leading-relaxed mb-8">
-                Accounts are managed by the administration. For root access, use the master credentials provided during setup. For staff/student accounts, contact your department head.
+                To reset your password or gain access, please contact the administration. They will provide you with the necessary credentials or reset instructions.
               </p>
               <button
                 onClick={() => setShowForgotModal(false)}
